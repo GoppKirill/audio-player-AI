@@ -1,1 +1,1 @@
-# audio player AI
+# audio-player-AI
