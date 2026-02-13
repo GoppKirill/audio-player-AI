@@ -16,13 +16,55 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState('home');
+  
+  // Новые состояния для плеера
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(0.7);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
 
   const audioRef = useRef(new Audio());
 
   useEffect(() => {
     checkServer();
     fetchTracks();
+
+    // Добавляем обработчики событий аудио
+    const audio = audioRef.current;
+    
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+    };
+    
+    const handleLoadedMetadata = () => {
+      setDuration(audio.duration);
+    };
+    
+    const handleEnded = () => {
+      setIsPlaying(false);
+      playNext(); // Автоматически следующий трек
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('ended', handleEnded);
+    };
   }, []);
+
+  useEffect(() => {
+    // Применяем громкость при изменении
+    audioRef.current.volume = volume;
+  }, [volume]);
+
+  useEffect(() => {
+    // Применяем скорость при изменении
+    audioRef.current.playbackRate = playbackSpeed;
+  }, [playbackSpeed]);
 
   const checkServer = async () => {
     try {
@@ -60,6 +102,20 @@ function App() {
     }
   };
 
+  const playNext = () => {
+    if (!currentTrack || tracks.length === 0) return;
+    const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
+    const nextIndex = (currentIndex + 1) % tracks.length;
+    playTrack(tracks[nextIndex]);
+  };
+
+  const playPrevious = () => {
+    if (!currentTrack || tracks.length === 0) return;
+    const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
+    const prevIndex = (currentIndex - 1 + tracks.length) % tracks.length;
+    playTrack(tracks[prevIndex]);
+  };
+
   const deleteTrack = async (id) => {
     if (!confirm('Удалить трек?')) return;
     try {
@@ -73,6 +129,19 @@ function App() {
     } catch (error) {
       console.error('Delete error:', error);
     }
+  };
+
+  const handleSeek = (time) => {
+    audioRef.current.currentTime = time;
+    setCurrentTime(time);
+  };
+
+  const handleVolumeChange = (newVolume) => {
+    setVolume(newVolume);
+  };
+
+  const handleSpeedChange = (speed) => {
+    setPlaybackSpeed(speed);
   };
 
   return (
@@ -109,6 +178,15 @@ function App() {
               }
             }
           }}
+          onNext={playNext}
+          onPrevious={playPrevious}
+          volume={volume}
+          onVolumeChange={handleVolumeChange}
+          currentTime={currentTime}
+          duration={duration}
+          onSeek={handleSeek}
+          playbackSpeed={playbackSpeed}
+          onSpeedChange={handleSpeedChange}
         />
       </div>
 
