@@ -3,123 +3,134 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const crypto = require('crypto');
 
 const app = express();
 const PORT = 5002;
 
-// Middleware
-app.use(cors());
+// Разрешаем всё
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 
-// Создаем папку для загрузок
+// СОЗДАЕМ ПАПКУ UPLOADS
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
+    console.log('✅ Папка uploads создана');
 }
 
-// Статические файлы
+// СТАТИЧЕСКИЕ ФАЙЛЫ
 app.use('/uploads', express.static(uploadDir));
 
-// Настройка Multer
+// НАСТРОЙКА MULTER - УПРОЩЕННАЯ
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-        const uniqueName = crypto.randomBytes(16).toString('hex') + path.extname(file.originalname);
+        const uniqueName = Date.now() + '-' + file.originalname;
         cb(null, uniqueName);
     }
 });
 
 const upload = multer({ 
     storage: storage,
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/m4a'];
-        if (allowedTypes.includes(file.mimetype)) {
-            cb(null, true);
-        } else {
-            cb(new Error('Только аудио файлы разрешены!'));
-        }
-    },
-    limits: {
-        fileSize: 50 * 1024 * 1024 // 50MB
-    }
+    limits: { fileSize: 50 * 1024 * 1024 }
 });
 
-// Хранилище треков (в реальном проекте замените на БД)
-let tracks = [];
+// ХРАНИЛИЩЕ ТРЕКОВ
+let tracks = [
+        {
+        id: '1',
+        title: 'Тестовый трек 3',
+        artist: 'Sample Artist',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
+    }
+];
 
-// ============= ROUTES =============
+// ============ МАРШРУТЫ ============
 
-// Проверка сервера
+// 1. ПРОВЕРКА СЕРВЕРА
 app.get('/', (req, res) => {
     res.json({ 
-        status: 'online',
-        message: 'Audio Player API работает!',
-        time: new Date().toLocaleString()
+        message: '✅ Audio Player работает',
+        port: PORT,
+        tracksCount: tracks.length
     });
 });
 
-// Получить все треки
-app.get('/api/tracks', (req, res) => {
+// 2. ПОЛУЧИТЬ ВСЕ ТРЕКИ
+app.get('/tracks', (req, res) => {
     res.json(tracks);
 });
 
-// Загрузить трек
-app.post('/api/tracks', upload.single('audio'), (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'Файл не загружен' });
+// 3. ЗАГРУЗИТЬ ТРЕК - ЭТОТ МАРШРУТ ВАЖЕН!
+app.post('/tracks', upload.single('audio'), (req, res) => {
+    console.log('\n=== ПОЛУЧЕН POST /tracks ===');
+    console.log('Тело запроса:', req.body);
+    console.log('Файл:', req.file ? req.file.originalname : 'НЕТ ФАЙЛА');
+    
+    if (!req.file) {
+        return res.status(400).json({ error: 'Файл не найден' });
+    }
+
+    const track = {
+        id: Date.now().toString(),
+        title: req.body.title || req.file.originalname,
+        artist: req.body.artist || 'Неизвестный',
+        filename: req.file.filename,
+        path: `/uploads/${req.file.filename}`,
+        size: req.file.size,
+        createdAt: new Date().toISOString()
+    };
+
+    tracks.push(track);
+    console.log('✅ Трек добавлен:', track.title);
+    console.log('📁 Файл сохранен:', req.file.filename);
+    console.log('========================\n');
+    
+    res.status(201).json(track);
+});
+
+// 4. УДАЛИТЬ ТРЕК
+app.delete('/tracks/:id', (req, res) => {
+    const index = tracks.findIndex(t => t.id === req.params.id);
+    if (index !== -1) {
+        const track = tracks[index];
+        const filePath = path.join(uploadDir, track.filename);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
         }
+        tracks.splice(index, 1);
+        res.json({ message: '✅ Трек удален' });
+    } else {
+        res.status(404).json({ error: 'Трек не найден' });
+    }
+});
 
-        const track = {
-            id: crypto.randomBytes(8).toString('hex'),
-            title: req.body.title || req.file.originalname.replace(path.extname(req.file.originalname), ''),
-            artist: req.body.artist || 'Неизвестный исполнитель',
-            filename: req.file.filename,
-            path: `/uploads/${req.file.filename}`,
-            size: req.file.size,
-            mimetype: req.file.mimetype,
-            createdAt: new Date().toISOString()
-        };
-
-        tracks.push(track);
-        res.status(201).json(track);
+// 5. DEBUG - ПРОВЕРКА ФАЙЛОВ
+app.get('/debug', (req, res) => {
+    try {
+        const files = fs.existsSync(uploadDir) ? fs.readdirSync(uploadDir) : [];
+        res.json({
+            server: 'online',
+            port: PORT,
+            uploadsPath: uploadDir,
+            files: files,
+            tracks: tracks
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.json({ error: error.message });
     }
 });
 
-// Удалить трек
-app.delete('/api/tracks/:id', (req, res) => {
-    const trackIndex = tracks.findIndex(t => t.id === req.params.id);
-    
-    if (trackIndex === -1) {
-        return res.status(404).json({ error: 'Трек не найден' });
-    }
-
-    const track = tracks[trackIndex];
-    const filePath = path.join(uploadDir, track.filename);
-    
-    // Удаляем файл
-    if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-    }
-    
-    // Удаляем из массива
-    tracks.splice(trackIndex, 1);
-    
-    res.json({ message: 'Трек удален' });
-});
-
-// Запуск сервера
+// ЗАПУСК
 app.listen(PORT, () => {
-    console.log('\n' + '='.repeat(50));
-    console.log('🎵 AUDIO PLAYER SERVER');
-    console.log('='.repeat(50));
-    console.log(`✅ Сервер запущен: http://localhost:${PORT}`);
-    console.log(`📁 Загрузки: ${uploadDir}`);
-    console.log('='.repeat(50) + '\n');
+    console.log('\n' + '='.repeat(60));
+    console.log('🎵 АУДИО ПЛЕЕР - СЕРВЕР ЗАПУЩЕН');
+    console.log('='.repeat(60));
+    console.log(`✅ Порт: ${PORT}`);
+    console.log(`📁 Uploads: ${uploadDir}`);
+    console.log(`🔍 Debug: http://localhost:${PORT}/debug`);
+    console.log(`📤 POST /tracks - загрузка треков`);
+    console.log('='.repeat(60) + '\n');
 });
-
