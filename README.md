@@ -9,5 +9,6 @@
 3. cd server
 	npm install
 	node server.js
+	npm install bcrypt jsonwebtoken sqlite3
 
 4. Start localhost	
