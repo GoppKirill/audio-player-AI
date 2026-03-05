@@ -11,27 +11,38 @@ const Sidebar = ({ setCurrentView, onUploadClick, onPlaylistClick, user, onLogou
       display: 'flex',
       flexDirection: 'column'
     }}>
-      {/* Лого */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        marginBottom: '40px'
-      }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          background: '#1db954',
-          borderRadius: '10px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '20px'
-        }}>
-          🎵
-        </div>
-        <h2 style={{ color: '#fff', margin: 0 }}>Player</h2>
-      </div>
+{/* Лого AURA */}
+<div style={{
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  marginBottom: '40px'
+}}>
+  <div style={{
+    width: '40px',
+    height: '40px',
+    background: 'linear-gradient(135deg, #1db954, #4CAF50)',
+    borderRadius: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '20px',
+    fontWeight: 'bold',
+    color: '#fff',
+    boxShadow: '0 4px 10px rgba(29,185,84,0.3)'
+  }}>
+    A
+  </div>
+  <h2 style={{ 
+    color: '#fff', 
+    margin: 0,
+    fontSize: '24px',
+    fontWeight: 600,
+    letterSpacing: '1px'
+  }}>
+    AURA
+  </h2>
+</div>
 
       {/* Информация о пользователе (если авторизован) */}
       {user && (

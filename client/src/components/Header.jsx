@@ -17,14 +17,17 @@ const Header = ({ serverStatus, user, onLoginClick, onLogout }) => {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
         <h1 style={{
-          fontSize: '24px',
-          fontWeight: 600,
-          color: '#fff',
-          margin: 0,
-          letterSpacing: '-0.5px'
-        }}>
-          Audio Player
-        </h1>
+  fontSize: '24px',
+  fontWeight: 600,
+  color: '#fff',
+  margin: 0,
+  letterSpacing: '1px',
+  background: 'linear-gradient(135deg, #fff, #b3b3b3)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent'
+}}>
+  AURA
+</h1>
         
         {/* Статус сервера */}
         <div style={{
