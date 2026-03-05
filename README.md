@@ -1,14 +1,30 @@
-1. git clone https://github.com/GoppKirill/audio-player-AI.git
+# 🎵 AURA - music player
 
-2. Open 2 terminals (terminal or powershell)
+**AURA** — This is a modern music player with a dark design and user authorization.
 
-2. cd client
-	npm install
-	npm run dev
+- **Frontend:** React, Vite
+- **Backend:** Node.js, Express, SQLite
+- **Authentication:** JWT, bcrypt
+- **Styles:** CSS-in-JS
 
-3. cd server
-	npm install
-	node server.js
-	npm install bcrypt jsonwebtoken sqlite3
+## 📦 Installation
 
-4. Start localhost	
+```bash
+# Clone a repository
+git clone https://github.com/yourusername/aura-player.git
+
+# Install dependencies for the server
+cd server
+npm install
+
+# Install dependencies for the client
+cd ../client
+npm install
+
+# Start the server
+cd ../server
+node server.js
+
+# Launch the client
+cd ../client
+npm run dev
