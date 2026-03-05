@@ -2,7 +2,7 @@
 
 2. Open 2 terminals (terminal or powershell)
 
-2. cd cleint
+2. cd client
 	npm install
 	npm run dev
 
